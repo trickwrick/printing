@@ -1,4 +1,4 @@
-export const PLATE_USAGE_STORAGE_KEY = 'hariharPlateUsageCounts';
+export const PLATE_USAGE_STORAGE_KEY = 'shreeOmPlateUsageCounts';
 
 export const readPlateUsageMap = () => {
   try {

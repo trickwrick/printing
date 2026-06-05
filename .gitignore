@@ -35,4 +35,6 @@ dist_electron
 # Project specific
 server/scratch/
 server/data/*.json
+crm_deploy.zip
+true/
 output.log

@@ -1,0 +1,305 @@
+@import "tailwindcss";
+
+:root {
+  /* Global HEX Color Overrides for PDF Compatibility (Tailwind 4) */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+
+  --color-teal-50: #f0fdfa;
+  --color-teal-500: #14b8a6;
+  --color-teal-600: #0d9488;
+
+  --color-red-50: #fef2f2;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+
+  --color-amber-500: #f59e0b;
+}
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background-color: #f4f7fa;
+    color: #1f2937;
+    margin: 0;
+    padding: 0;
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    overflow-x: hidden;
+  }
+}
+
+.border-line {
+  border-style: solid;
+  border-color: #000;
+}
+
+/* Invoice preview — keep content off page edges */
+.invoice-print-page.a4-page {
+  width: 100%;
+  max-width: 186mm;
+  min-height: auto;
+  padding: 8mm 10mm;
+  box-sizing: border-box;
+}
+
+#print-root-temp {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  /* Reset browser defaults for printing */
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: white !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Cloned invoice/challan — print only this, not the modal */
+  body.is-printing #root {
+    display: none !important;
+  }
+
+  body.is-printing #print-root-temp {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+
+  body.is-printing #print-root-temp .a4-page {
+    width: 186mm !important;
+    max-width: 186mm !important;
+    min-height: auto !important;
+    height: auto !important;
+    padding: 6mm 8mm !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  /* Hide UI elements */
+  nav,
+  aside,
+  header,
+  footer,
+  button,
+  .no-print,
+  .modal-header,
+  .modal-footer,
+  [role="navigation"],
+  [role="complementary"],
+  .modal-backdrop {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Ensure the main application background is white */
+  #root {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Invoice/challan print modal - do not clip scrollable preview area */
+  .print-modal-overlay {
+    position: static !important;
+    inset: auto !important;
+    width: auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    display: block !important;
+    overflow: visible !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: auto !important;
+  }
+
+  .print-modal-shell {
+    max-height: none !important;
+    max-width: none !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: block !important;
+  }
+
+  /* Legacy fixed modals (job card, estimates) — do NOT use [class*="fixed"] (breaks table-fixed) */
+  .fixed.inset-0:not(.print-modal-overlay) {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    height: auto !important;
+    display: block !important;
+    overflow: visible !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: auto !important;
+  }
+
+  /* Universal A4 Sheet Wrapper */
+  .a4-page-container {
+    display: block !important;
+    background: white !important;
+    width: 210mm !important;
+    min-height: auto !important;
+    height: auto !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* The actual A4 Sheet */
+  .a4-page {
+    width: 186mm !important;
+    max-width: 186mm !important;
+    min-height: auto !important;
+    height: auto !important;
+    padding: 6mm 8mm !important;
+    margin: 0 auto !important;
+    background: white !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    display: block !important;
+    position: relative !important;
+    border: none !important;
+  }
+
+  /* Invoice print */
+  .invoice-print-page {
+    width: 186mm !important;
+    max-width: 186mm !important;
+    min-height: auto !important;
+    padding: 6mm 8mm !important;
+    margin: 0 auto !important;
+  }
+
+  .invoice-print-page .invoice-fill-row {
+    display: none !important;
+  }
+
+  .invoice-print-page .invoice-footer {
+    page-break-inside: avoid !important;
+  }
+
+  /* Challan print — purana layout, sirf 1 page fit */
+  .challan-print-page {
+    width: 208mm !important;
+    max-width: 208mm !important;
+    min-height: auto !important;
+    padding: 12mm !important;
+    margin: 0 auto !important;
+  }
+
+  .challan-print-page .invoice-fill-row {
+    display: none !important;
+  }
+
+  .challan-print-page .challan-items-table {
+    min-height: 0 !important;
+  }
+
+  .challan-print-page .invoice-footer {
+    page-break-inside: avoid !important;
+    margin-top: 1rem !important;
+  }
+
+  .challan-print-page .invoice-footer > div:first-child {
+    padding-top: 1.5rem !important;
+  }
+
+  .challan-print-page .invoice-footer > div:last-child {
+    padding-top: 0.5rem !important;
+  }
+
+  .invoice-print-page,
+  .challan-print-page,
+  #printable-content,
+  #printable-content:has(#printable-invoice),
+  #printable-content:has(#printable-challan) {
+    min-height: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  #printable-invoice,
+  #printable-challan,
+  #printable-inner {
+    visibility: visible !important;
+    display: block !important;
+  }
+
+  /* Prevent sections from breaking awkwardly */
+  section,
+  tr,
+  .avoid-break {
+    page-break-inside: avoid !important;
+  }
+
+  /* Border handling for print - Internal borders only */
+  .a4-page div,
+  .a4-page table,
+  .a4-page tr,
+  .a4-page td,
+  .a4-page th {
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+  }
+
+  /* Force background colors to show in print (modern browsers) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

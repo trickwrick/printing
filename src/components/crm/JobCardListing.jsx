@@ -358,10 +358,13 @@ export default function JobCardListing() {
                 filteredCards.map((card, index) => {
                   const jobId = getJobCardId(card);
                   const completedSteps = progressMap[jobId] || 0;
+                  const isDarkRow = index % 2 === 0;
+                  const rowBg = isDarkRow ? 'bg-gray-100' : 'bg-white';
+                  const rowHover = isDarkRow ? 'hover:bg-gray-200/80' : 'hover:bg-gray-50';
 
                   return (
                   <React.Fragment key={card._id}>
-                  <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <tr className={`${rowBg} ${rowHover} transition-colors`}>
                     <td className="py-2 px-0.5 text-gray-500 align-top text-center text-[11px]">{index + 1}</td>
                     {columnVisibility.partyName && (
                       <td className="py-2 px-1.5 font-medium text-gray-900 align-top break-words whitespace-normal leading-snug">{card.partyName}</td>
@@ -457,7 +460,7 @@ export default function JobCardListing() {
                       </div>
                     </td>
                   </tr>
-                  <tr className="border-b last:border-0 border-gray-100 bg-gray-50/30">
+                  <tr className={`${rowBg} border-b-2 border-black`}>
                     <td colSpan={tableColSpan} className="py-1.5 px-2">
                       <div className="flex items-stretch gap-2">
                         <div className="flex-1 min-w-0">

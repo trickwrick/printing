@@ -3,12 +3,12 @@ import * as jobcardService from '@/server/services/jobcard';
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const { id } = await params;
-  return withDb(() => jobcardService.findOne(id));
+  return withDb(request, () => jobcardService.findOne(id));
 }
 
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(request: Request, { params }: Params) {
   const { id } = await params;
-  return withDb(() => jobcardService.remove(id));
+  return withDb(request, () => jobcardService.remove(id));
 }

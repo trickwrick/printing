@@ -1,8 +1,18 @@
+import dns from 'dns';
 import mongoose from 'mongoose';
 
 declare global {
   // eslint-disable-next-line no-var
   var mongooseConn: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
+}
+
+if (typeof window === 'undefined') {
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+    dns.setDefaultResultOrder('ipv4first');
+  } catch {
+    /* ignore */
+  }
 }
 
 const MONGO_URI = process.env.MONGO_URI;
@@ -24,14 +34,31 @@ export async function connectDB() {
     throw new Error('MONGO_URI not configured');
   }
 
-  if (global.mongooseConn.conn) {
-    return global.mongooseConn.conn;
+  if (mongoose.connection.readyState === 1) {
+    global.mongooseConn.conn = mongoose;
+    return mongoose;
+  }
+
+  if (global.mongooseConn.conn && mongoose.connection.readyState !== 1) {
+    global.mongooseConn.conn = null;
+    global.mongooseConn.promise = null;
   }
 
   if (!global.mongooseConn.promise) {
-    global.mongooseConn.promise = mongoose.connect(resolveMongoUri(MONGO_URI), {
-      bufferCommands: false,
-    });
+    global.mongooseConn.promise = mongoose
+      .connect(resolveMongoUri(MONGO_URI), {
+        serverSelectionTimeoutMS: 30000,
+        connectTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+        maxPoolSize: 5,
+        family: 4,
+        retryWrites: true,
+        retryReads: true,
+      })
+      .catch((err) => {
+        global.mongooseConn.promise = null;
+        throw err;
+      });
   }
 
   global.mongooseConn.conn = await global.mongooseConn.promise;

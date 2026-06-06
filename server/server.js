@@ -15,7 +15,7 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 
 // Debug
 console.log("------------------------------------------");
-console.log(`📡 ENV CHECK: ${process.env.MONGO_URI}`);
+console.log(`📡 Database: ${process.env.MONGO_URI ? "configured" : "not configured (add server/.env when ready)"}`);
 console.log("------------------------------------------");
 
 // Routes
@@ -35,9 +35,13 @@ app.use(express.json());
 
 /* ================= DB CONNECT ================= */
 const connectDB = async () => {
+    if (!process.env.MONGO_URI) {
+        console.warn("⚠️ MONGO_URI not set — server running without database");
+        return;
+    }
+
     try {
         await mongoose.connect(process.env.MONGO_URI);
-
         console.log("✅ MongoDB Connected Successfully");
     } catch (error) {
         console.error("❌ MongoDB Error:", error.message);

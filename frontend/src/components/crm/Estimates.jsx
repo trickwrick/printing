@@ -323,7 +323,7 @@ export default function Estimates() {
                       Computer Quotation
                     </h1>
                     <div className="mt-2">
-                      <h2 className="text-xl font-bold text-gray-800 tracking-tight">Shree Om Printing Press</h2>
+                      <h2 className="text-xl font-bold text-gray-800 tracking-tight">Krishna Printers</h2>
                       <p className="text-[10px] text-gray-700 font-medium italic">Your Vision, Our Print.</p>
                     </div>
                   </div>
@@ -358,7 +358,7 @@ export default function Estimates() {
                   <div className="flex-1">
                     <h4 className="text-[11px] font-black text-gray-900 border-b-2 mb-2 pb-0.5 inline-block uppercase tracking-wider">Address :</h4>
                     <div className="text-[12px] space-y-1 font-medium text-gray-600">
-                      <p className="font-bold text-gray-800">Shree Om Printing Press</p>
+                      <p className="font-bold text-gray-800">Krishna Printers</p>
                       <p>Office: J-97, Ashok Chowk, Adarsh Nagar, Jaipur</p>
                       <p>Factory: G-139, Hirawala Ind. Area, Kanota, Jaipur</p>
                       <p>Tel: +91 94140-43763</p>
@@ -461,7 +461,7 @@ export default function Estimates() {
 
                 {/* --- FOOTER SECTION --- */}
                 <div className="mt-12 text-[11px] text-gray-700 space-y-4">
-                  <p className="font-medium">This Quotation is prepared by: <span className="font-bold text-gray-800 ml-1">Admin @ Shree Om Printing Press</span></p>
+                  <p className="font-medium">This Quotation is prepared by: <span className="font-bold text-gray-800 ml-1">Admin @ Krishna Printers</span></p>
 
                   <div className="pt-8 grid grid-cols-2 gap-20">
                     <div className="border-t border-gray-300 pt-1">

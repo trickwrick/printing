@@ -5,6 +5,8 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: Params) {
   const { id } = await params;
-  const body = await request.json();
-  return withDb(() => jobcardService.updatePrice(id, body.totalAmount));
+  return withDb(request, async () => {
+    const body = await request.json();
+    return jobcardService.updatePrice(id, body.totalAmount);
+  });
 }

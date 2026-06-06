@@ -165,8 +165,8 @@ export default function JobCardListing() {
       try {
         await deleteJobCard(cardToDelete);
         setJobCards(jobCards.filter((card) => card._id !== cardToDelete));
-        setIsDeleteModalOpen(false);
-        setCardToDelete(null);
+          setIsDeleteModalOpen(false);
+          setCardToDelete(null);
       } catch (error) {
         console.error('Error deleting job card:', error);
       }

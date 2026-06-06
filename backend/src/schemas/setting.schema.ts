@@ -5,7 +5,7 @@ export type SettingDocument = HydratedDocument<Setting>;
 
 @Schema({ timestamps: true })
 export class Setting {
-  @Prop({ default: 'Shree Om Printing Press' })
+  @Prop({ default: 'Krishna Printers' })
   siteTitle?: string;
 
   @Prop()

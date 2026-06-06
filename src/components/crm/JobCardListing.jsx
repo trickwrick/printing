@@ -11,6 +11,11 @@ import { navigateWithEditData } from '@/lib/navigation';
 import { printElement } from '@/utils/printDocument';
 
 import { fetchJobCards, deleteJobCard } from '@/utils/jobCardStorage';
+import MiniWorkflowStepper from '@/components/crm/MiniWorkflowStepper';
+import {
+  getJobCardId,
+  readWorkflowProgressMap,
+} from '@/utils/jobWorkflowProgress';
 
 export default function JobCardListing() {
   const router = useRouter();
@@ -19,6 +24,7 @@ export default function JobCardListing() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const filterRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [progressMap, setProgressMap] = useState({});
   const [columnVisibility, setColumnVisibility] = useState(() => {
     const saved = localStorage.getItem('jobCardColumnVisibility');
     if (saved) {
@@ -61,9 +67,13 @@ export default function JobCardListing() {
   };
 
   useEffect(() => {
+    const loadProgress = () => setProgressMap(readWorkflowProgressMap());
+    loadProgress();
     loadData();
     const onUpdate = () => loadData();
+    const onProgressUpdate = () => loadProgress();
     window.addEventListener('jobCardsUpdated', onUpdate);
+    window.addEventListener('jobWorkflowUpdated', onProgressUpdate);
 
     const handleClickOutside = (event) => {
       if (filterRef.current && !filterRef.current.contains(event.target)) {
@@ -74,6 +84,7 @@ export default function JobCardListing() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('jobCardsUpdated', onUpdate);
+      window.removeEventListener('jobWorkflowUpdated', onProgressUpdate);
     };
   }, []);
 
@@ -151,6 +162,9 @@ export default function JobCardListing() {
     card.jobName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     card.jobNumber?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const tableColSpan =
+    2 + Object.values(columnVisibility).filter(Boolean).length;
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState(null);
@@ -340,8 +354,13 @@ export default function JobCardListing() {
                   </td>
                 </tr>
               ) : (
-                filteredCards.map((card, index) => (
-                  <tr key={card._id} className="border-b last:border-0 border-gray-50 hover:bg-gray-50 transition-colors">
+                filteredCards.map((card, index) => {
+                  const jobId = getJobCardId(card);
+                  const completedSteps = progressMap[jobId] || 0;
+
+                  return (
+                  <React.Fragment key={card._id}>
+                  <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="py-2 px-0.5 text-gray-500 align-top text-center text-[11px]">{index + 1}</td>
                     {columnVisibility.partyName && (
                       <td className="py-2 px-1.5 font-medium text-gray-900 align-top break-words whitespace-normal leading-snug">{card.partyName}</td>
@@ -437,7 +456,14 @@ export default function JobCardListing() {
                       </div>
                     </td>
                   </tr>
-                ))
+                  <tr className="border-b last:border-0 border-gray-100 bg-gray-50/30">
+                    <td colSpan={tableColSpan} className="py-1.5 px-2">
+                      <MiniWorkflowStepper completedCount={completedSteps} />
+                    </td>
+                  </tr>
+                  </React.Fragment>
+                  );
+                })
               )}
             </tbody>
           </table>

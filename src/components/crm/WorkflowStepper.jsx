@@ -2,41 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { Check, ChevronRight, RotateCcw, Shield, UserCog } from 'lucide-react';
+import {
+  WORKFLOW_STORAGE_KEY,
+  getJobCardId,
+  WORKFLOW_STEPS,
+  getWorkflowStepStatus,
+} from '@/utils/jobWorkflowProgress';
 
-const WORKFLOW_STEPS = [
-  {
-    id: 1,
-    title: 'Design & Proof',
-    task: 'Job review, design & client approval',
-    role: 'Super Admin',
-    assignee: 'Super Admin 1',
-  },
-  {
-    id: 2,
-    title: 'Printing',
-    task: 'Plate making & print production',
-    role: 'Super Admin',
-    assignee: 'Super Admin 2',
-  },
-  {
-    id: 3,
-    title: 'Binding & Finish',
-    task: 'Cutting, folding, lamination & binding',
-    role: 'Admin',
-    assignee: 'Admin 1',
-  },
-  {
-    id: 4,
-    title: 'QC & Delivery',
-    task: 'Quality check, packing & dispatch',
-    role: 'Admin',
-    assignee: 'Admin 2',
-  },
-];
-
-const STORAGE_KEY = 'jobWorkflowProgress';
-
-const getJobId = (job) => String(job?._id || job?.id || '');
+const getJobId = getJobCardId;
 
 export default function WorkflowStepper({ jobCards = [] }) {
   const [selectedJobId, setSelectedJobId] = useState('');
@@ -44,7 +17,7 @@ export default function WorkflowStepper({ jobCards = [] }) {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(WORKFLOW_STORAGE_KEY);
       if (saved) setProgressMap(JSON.parse(saved));
     } catch {
       setProgressMap({});
@@ -59,7 +32,8 @@ export default function WorkflowStepper({ jobCards = [] }) {
 
   const saveProgress = (updated) => {
     setProgressMap(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(WORKFLOW_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event('jobWorkflowUpdated'));
   };
 
   const completedCount = selectedJobId ? progressMap[selectedJobId] || 0 : 0;
@@ -77,11 +51,7 @@ export default function WorkflowStepper({ jobCards = [] }) {
     saveProgress({ ...progressMap, [selectedJobId]: 0 });
   };
 
-  const getStepStatus = (stepId) => {
-    if (stepId <= completedCount) return 'done';
-    if (stepId === activeStep) return 'active';
-    return 'pending';
-  };
+  const getStepStatus = (stepId) => getWorkflowStepStatus(stepId, completedCount);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-7 mb-8">

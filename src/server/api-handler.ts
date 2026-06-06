@@ -1,7 +1,31 @@
 import { NextResponse } from 'next/server';
 import { connectDB, isDbConfigured } from '@/server/db';
+import { maybeProxy } from '@/server/remote-proxy';
 
-export async function withDb<T>(handler: () => Promise<T>, status = 200) {
+async function ensureDb() {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await connectDB();
+      return;
+    } catch (err) {
+      lastError = err;
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
+export async function withDb<T>(
+  request: Request,
+  handler: () => Promise<T>,
+  status = 200,
+) {
+  const proxied = await maybeProxy(request);
+  if (proxied) return proxied;
+
   try {
     if (!isDbConfigured()) {
       return NextResponse.json(
@@ -9,7 +33,7 @@ export async function withDb<T>(handler: () => Promise<T>, status = 200) {
         { status: 503 },
       );
     }
-    await connectDB();
+    await ensureDb();
     const result = await handler();
     return NextResponse.json(result, { status });
   } catch (err) {

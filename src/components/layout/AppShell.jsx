@@ -229,6 +229,7 @@ export default function AppShell({ children }) {
   const fetchNotifications = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/notifications`);
+      if (!res.ok) return;
       const data = await res.json();
       setNotifications(data);
       setUnreadCount(data.filter((n) => !n.isRead).length);
@@ -240,7 +241,7 @@ export default function AppShell({ children }) {
   useEffect(() => {
     if (!authChecked) return;
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 5000);
+    const interval = setInterval(fetchNotifications, 30000);
     const handleCustomFetch = () => fetchNotifications();
     window.addEventListener('fetchNotifications', handleCustomFetch);
     return () => {

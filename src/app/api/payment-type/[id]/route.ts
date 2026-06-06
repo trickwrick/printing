@@ -5,11 +5,13 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function PUT(request: Request, { params }: Params) {
   const { id } = await params;
-  const body = await request.json();
-  return withDb(() => paymentTypeService.update(id, body.name));
+  return withDb(request, async () => {
+    const body = await request.json();
+    return paymentTypeService.update(id, body.name);
+  });
 }
 
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(request: Request, { params }: Params) {
   const { id } = await params;
-  return withDb(() => paymentTypeService.remove(id));
+  return withDb(request, () => paymentTypeService.remove(id));
 }

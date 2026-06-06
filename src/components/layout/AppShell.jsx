@@ -171,15 +171,7 @@ export default function AppShell({ children }) {
 
   const navigationItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
-    {
-      name: 'Job Card',
-      icon: Briefcase,
-      isDropdown: true,
-      dropdownItems: [
-        { label: 'Job Card Listings', icon: List, onClick: () => router.push('/job-card-list') },
-        { label: 'Add New', icon: PlusSquare, onClick: () => router.push('/job-card') },
-      ],
-    },
+    { name: 'Job Card', icon: Briefcase, path: '/job-card-list' },
     {
       name: 'Invoices',
       icon: FileText,
@@ -312,7 +304,10 @@ export default function AppShell({ children }) {
 
         <div className="hidden xl:flex flex-1 min-w-0 items-center justify-center gap-1 xl:gap-1.5 2xl:gap-2.5 whitespace-nowrap flex-nowrap">
           {navigationItems.map((item, idx) => {
-            const isActive = pathname === item.path || (item.path && pathname.startsWith(item.path) && item.path !== '/');
+            const isActive =
+              pathname === item.path ||
+              (item.name === 'Job Card' && pathname.includes('/job-card')) ||
+              (item.path && pathname.startsWith(item.path) && item.path !== '/');
 
             if (item.isDropdown) {
               return (
@@ -322,7 +317,6 @@ export default function AppShell({ children }) {
                   icon={item.icon}
                   items={item.dropdownItems}
                   isActive={
-                    (item.name === 'Job Card' && pathname.includes('/job-card')) ||
                     (item.name === 'Invoices' && pathname.includes('/invoice')) ||
                     (item.name === 'Challan' && pathname.includes('/challan')) ||
                     (item.name === 'Statements' && pathname.includes('/statements')) ||
@@ -473,7 +467,12 @@ export default function AppShell({ children }) {
                         if (item.path) router.push(item.path);
                         setIsMobileMenuOpen(false);
                       }}
-                      className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold rounded-xl transition ${pathname === item.path ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'}`}
+                      className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold rounded-xl transition ${
+                        pathname === item.path ||
+                        (item.name === 'Job Card' && pathname.includes('/job-card'))
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
                     >
                       <item.icon size={18} />
                       {item.name}

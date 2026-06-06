@@ -235,9 +235,6 @@ export default function Dashboard() {
         <div>
           <p className="text-sm font-semibold text-blue-600 mb-1">{today}</p>
           <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">{greeting}! 👋</h1>
-          <p className="text-gray-500 mt-2 text-sm sm:text-base">
-            Krishna Printers — aaj ka business overview
-          </p>
         </div>
         <button
           onClick={() => router.push('/job-card')}

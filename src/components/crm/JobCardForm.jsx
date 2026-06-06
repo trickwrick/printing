@@ -384,9 +384,6 @@ export default function JobCardForm() {
         </Section>
 
         <Section badge="Finishing Processes" badgeColor="bg-amber-600">
-          <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-4 font-medium">
-            Yes = process lagana hai · No = nahi lagana · Kam se kam ek process Yes karo
-          </p>
           <div className="overflow-x-auto -mx-2 px-2">
             <table className="w-full min-w-[800px] border-collapse text-sm">
               <thead>

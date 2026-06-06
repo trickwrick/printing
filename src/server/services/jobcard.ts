@@ -105,7 +105,10 @@ export async function saveOrUpdate(body: Record<string, unknown>) {
     console.error('Failed to create notification:', message);
   }
 
-  return jobCard;
+  return {
+    ...(typeof jobCard.toObject === 'function' ? jobCard.toObject() : jobCard),
+    _id: String(jobCard._id),
+  };
 }
 
 export async function getPlateUsedCount(plateSize?: string, editingId?: string) {

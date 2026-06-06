@@ -29,7 +29,7 @@ export async function connectDB() {
   }
 
   if (!global.mongooseConn.promise) {
-    global.mongooseConn.promise = mongoose.connect(MONGO_URI, {
+    global.mongooseConn.promise = mongoose.connect(resolveMongoUri(MONGO_URI), {
       bufferCommands: false,
     });
   }

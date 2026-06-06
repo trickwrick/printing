@@ -18,14 +18,16 @@ const FINISHING_COLUMNS = [
 ];
 
 export function parseFinishingFromCard(card) {
-  if (!card?.bindingNote) return [Object.fromEntries(FINISHING_COLUMNS.map((c) => [c.key, { ticked: false }]))];
+  if (!card?.bindingNote) {
+    return [Object.fromEntries(FINISHING_COLUMNS.map((c) => [c.key, { ticked: null }]))];
+  }
   try {
     const parsed = JSON.parse(card.bindingNote);
     if (Array.isArray(parsed) && parsed.length) return parsed;
   } catch {
     /* ignore */
   }
-  return [Object.fromEntries(FINISHING_COLUMNS.map((c) => [c.key, { ticked: false }]))];
+  return [Object.fromEntries(FINISHING_COLUMNS.map((c) => [c.key, { ticked: null }]))];
 }
 
 const fmtDate = (value) => {
@@ -43,10 +45,10 @@ const LabelCell = ({ children }) => (
   </td>
 );
 
-const YesNo = ({ yes }) => (
+const YesNo = ({ value }) => (
   <span className="inline-flex items-center gap-2 text-[10px] font-semibold">
-    <span>{yes ? '☑' : '☐'} Yes</span>
-    <span>{!yes ? '☑' : '☐'} No</span>
+    <span>{value === true ? '☑' : '☐'} Yes</span>
+    <span>{value === false ? '☑' : '☐'} No</span>
   </span>
 );
 
@@ -193,10 +195,10 @@ export default function JobCardPrintView({ card, printId = 'job-card-print-view'
           <tr>
             {FINISHING_COLUMNS.map((col) => {
               const cell = finishingRow[col.key];
-              const ticked = cell?.ticked ?? false;
+              const ticked = cell?.ticked ?? null;
               return (
                 <td key={col.key} className="border border-gray-400 px-1 py-1.5 text-center">
-                  <YesNo yes={ticked} />
+                  <YesNo value={ticked} />
                 </td>
               );
             })}

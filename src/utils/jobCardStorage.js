@@ -81,20 +81,6 @@ export function deleteLocalJobCard(id) {
   setLocalJobCards(getLocalJobCards().filter((c) => c._id !== id));
 }
 
-function normalizeJobCard(card) {
-  if (!card || typeof card !== 'object') return card;
-  const id = card._id?.$oid || card._id;
-  return {
-    ...card,
-    _id: id != null ? String(id) : card._id,
-    createdAt: card.createdAt || card.updatedAt || new Date().toISOString(),
-  };
-}
-
-function normalizeJobCards(cards) {
-  return (Array.isArray(cards) ? cards : []).map(normalizeJobCard);
-}
-
 function isLocalId(id) {
   return typeof id === 'string' && id.startsWith('local_');
 }
@@ -114,7 +100,7 @@ function mergeJobCards(serverCards, localCards) {
 
   return merged.sort(
     (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
-  ).map(normalizeJobCard);
+  );
 }
 
 export async function fetchJobCards() {
@@ -130,7 +116,7 @@ export async function fetchJobCards() {
     /* server not available — use local */
   }
 
-  return normalizeJobCards(local);
+  return local;
 }
 
 function buildApiPayload(data, localSaved) {
@@ -154,9 +140,8 @@ export async function saveJobCard(data) {
     });
 
     if (response.ok) {
-      const saved = normalizeJobCard(await response.json());
+      const saved = await response.json();
       saveLocalJobCard(saved);
-      window.dispatchEvent(new Event('jobCardsUpdated'));
       return { saved, dbSaved: true };
     }
 

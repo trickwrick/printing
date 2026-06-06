@@ -24,7 +24,7 @@ const FINISHING_COLUMNS = [
   { key: 'total', label: 'Total' },
 ];
 
-const emptyCell = () => ({ ticked: false });
+const emptyCell = () => ({ ticked: null });
 
 const emptyFinishingRow = () =>
   Object.fromEntries(FINISHING_COLUMNS.map((c) => [c.key, emptyCell()]));
@@ -34,10 +34,15 @@ const normalizeFinishingRow = (row) =>
     FINISHING_COLUMNS.map((c) => {
       const cell = row[c.key];
       if (cell && typeof cell === 'object' && 'ticked' in cell) {
-        return [c.key, { ticked: !!cell.ticked }];
+        const { ticked } = cell;
+        if (ticked === null || ticked === undefined) {
+          return [c.key, { ticked: null }];
+        }
+        return [c.key, { ticked: !!ticked }];
       }
       const val = cell != null ? String(cell) : '';
-      return [c.key, { ticked: !!val.trim() }];
+      if (!val.trim()) return [c.key, { ticked: null }];
+      return [c.key, { ticked: true }];
     }),
   );
 
@@ -96,7 +101,7 @@ const validateForm = ({ fd, plateSize, setCover, setInner, finishingRows }) => {
   finishingRows.forEach((row, rowIdx) => {
     FINISHING_COLUMNS.forEach((col) => {
       const cell = row[col.key];
-      if (cell.ticked) tickedCount += 1;
+      if (cell.ticked === true) tickedCount += 1;
     });
   });
 
@@ -207,12 +212,16 @@ export default function JobCardForm() {
       notes: remarks,
     };
 
+    const completionDays = fd.get('completionDays');
+    if (completionDays !== null && String(completionDays).trim() !== '') {
+      jobCard.completionDays = Number(completionDays);
+    }
+
     if (editData?._id) jobCard._id = editData._id;
 
     try {
       const result = await saveJobCard(jobCard);
       window.dispatchEvent(new Event('fetchNotifications'));
-      window.dispatchEvent(new Event('jobCardsUpdated'));
       if (!result.dbSaved) {
         alert(
           `Job card saved on this device only.\nDatabase error: ${result.dbError}\n\nVercel par MONGO_URI set karo aur MongoDB Atlas mein IP whitelist (0.0.0.0/0) allow karo.`,
@@ -408,7 +417,7 @@ export default function JobCardForm() {
                               <input
                                 type="radio"
                                 name={`fin-${rowIdx}-${col.key}`}
-                                checked={cell.ticked}
+                                checked={cell.ticked === true}
                                 onChange={() => toggleFinishingTick(rowIdx, col.key, true)}
                                 className="w-3 h-3 text-emerald-600"
                               />
@@ -418,7 +427,7 @@ export default function JobCardForm() {
                               <input
                                 type="radio"
                                 name={`fin-${rowIdx}-${col.key}`}
-                                checked={!cell.ticked}
+                                checked={cell.ticked === false}
                                 onChange={() => toggleFinishingTick(rowIdx, col.key, false)}
                                 className="w-3 h-3 text-gray-400"
                               />
@@ -432,6 +441,25 @@ export default function JobCardForm() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </Section>
+
+        <Section badge="Time Period" badgeColor="bg-rose-600">
+          <div className="max-w-xs">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              Expected completion time (in days)
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                name="completionDays"
+                min="1"
+                defaultValue={editData?.completionDays ?? ''}
+                className={fieldClass}
+                placeholder="e.g. 7"
+              />
+              <span className="text-sm font-semibold text-gray-600 shrink-0">Days</span>
+            </div>
           </div>
         </Section>
 

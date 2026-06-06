@@ -4,22 +4,6 @@ import {
   syncStockFromJobChange,
 } from '@/server/utils/jobcard-stock.helpers';
 
-function serializeJobCard(
-  jobCard: Record<string, unknown> | { toObject?: () => Record<string, unknown> },
-) {
-  const plain =
-    jobCard &&
-    typeof jobCard === 'object' &&
-    'toObject' in jobCard &&
-    typeof jobCard.toObject === 'function'
-      ? jobCard.toObject()
-      : jobCard;
-  return {
-    ...plain,
-    _id: plain._id != null ? String(plain._id) : plain._id,
-  };
-}
-
 export async function saveOrUpdate(body: Record<string, unknown>) {
   const { partyName } = body;
   const jobNumber = body.jobNumber as string | undefined;
@@ -121,7 +105,7 @@ export async function saveOrUpdate(body: Record<string, unknown>) {
     console.error('Failed to create notification:', message);
   }
 
-  return serializeJobCard(jobCard as Record<string, unknown>);
+  return jobCard;
 }
 
 export async function getPlateUsedCount(plateSize?: string, editingId?: string) {

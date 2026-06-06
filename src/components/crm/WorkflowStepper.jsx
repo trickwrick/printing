@@ -36,6 +36,8 @@ const WORKFLOW_STEPS = [
 
 const STORAGE_KEY = 'jobWorkflowProgress';
 
+const getJobId = (job) => String(job?._id || job?.id || '');
+
 export default function WorkflowStepper({ jobCards = [] }) {
   const [selectedJobId, setSelectedJobId] = useState('');
   const [progressMap, setProgressMap] = useState({});
@@ -51,7 +53,7 @@ export default function WorkflowStepper({ jobCards = [] }) {
 
   useEffect(() => {
     if (!selectedJobId && jobCards.length > 0) {
-      setSelectedJobId(jobCards[0]._id);
+      setSelectedJobId(getJobId(jobCards[0]));
     }
   }, [jobCards, selectedJobId]);
 
@@ -61,7 +63,7 @@ export default function WorkflowStepper({ jobCards = [] }) {
   };
 
   const completedCount = selectedJobId ? progressMap[selectedJobId] || 0 : 0;
-  const selectedJob = jobCards.find((j) => j._id === selectedJobId);
+  const selectedJob = jobCards.find((j) => getJobId(j) === selectedJobId);
   const allDone = completedCount >= WORKFLOW_STEPS.length;
   const activeStep = allDone ? null : completedCount + 1;
 
@@ -102,7 +104,7 @@ export default function WorkflowStepper({ jobCards = [] }) {
               <option value="">No job cards</option>
             ) : (
               jobCards.map((job) => (
-                <option key={job._id} value={job._id}>
+                <option key={getJobId(job)} value={getJobId(job)}>
                   {job.jobNumber} — {job.partyName}
                 </option>
               ))

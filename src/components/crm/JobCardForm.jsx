@@ -210,8 +210,13 @@ export default function JobCardForm() {
     if (editData?._id) jobCard._id = editData._id;
 
     try {
-      await saveJobCard(jobCard);
+      const result = await saveJobCard(jobCard);
       window.dispatchEvent(new Event('fetchNotifications'));
+      if (!result.dbSaved) {
+        alert(
+          `Job card saved on this device only.\nDatabase error: ${result.dbError}\n\nVercel par MONGO_URI set karo aur MongoDB Atlas mein IP whitelist (0.0.0.0/0) allow karo.`,
+        );
+      }
       router.push('/job-card-list');
     } catch {
       alert('Save failed. Please try again.');

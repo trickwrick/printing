@@ -81,35 +81,83 @@ export function deleteLocalJobCard(id) {
   setLocalJobCards(getLocalJobCards().filter((c) => c._id !== id));
 }
 
+function isLocalId(id) {
+  return typeof id === 'string' && id.startsWith('local_');
+}
+
+function mergeJobCards(serverCards, localCards) {
+  const merged = Array.isArray(serverCards) ? [...serverCards] : [];
+  const seen = new Set(
+    merged.flatMap((card) => [card?._id, card?.jobNumber].filter(Boolean)),
+  );
+
+  for (const card of localCards) {
+    const keys = [card?._id, card?.jobNumber].filter(Boolean);
+    if (keys.some((key) => seen.has(key))) continue;
+    merged.push(card);
+    keys.forEach((key) => seen.add(key));
+  }
+
+  return merged.sort(
+    (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
+  );
+}
+
 export async function fetchJobCards() {
+  const local = getLocalJobCards();
+
   try {
-    const response = await fetch('/api/jobcard');
+    const response = await fetch('/api/jobcard', { cache: 'no-store' });
     if (response.ok) {
       const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data)) return mergeJobCards(data, local);
     }
   } catch {
     /* server not available — use local */
   }
-  return getLocalJobCards();
+
+  return local;
+}
+
+function buildApiPayload(data, localSaved) {
+  const payload = { ...data, jobNumber: localSaved.jobNumber };
+  if (localSaved._id && !isLocalId(localSaved._id)) {
+    payload._id = localSaved._id;
+  } else {
+    delete payload._id;
+  }
+  return payload;
 }
 
 export async function saveJobCard(data) {
   const localSaved = saveLocalJobCard(data);
 
   try {
-    const payload = { ...data, _id: localSaved._id, jobNumber: localSaved.jobNumber };
     const response = await fetch('/api/jobcard', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(buildApiPayload(data, localSaved)),
     });
-    if (response.ok) return await response.json();
-  } catch {
-    /* saved locally */
-  }
 
-  return localSaved;
+    if (response.ok) {
+      const saved = await response.json();
+      saveLocalJobCard(saved);
+      return { saved, dbSaved: true };
+    }
+
+    const err = await response.json().catch(() => ({}));
+    return {
+      saved: localSaved,
+      dbSaved: false,
+      dbError: err?.error || 'Database save failed',
+    };
+  } catch {
+    return {
+      saved: localSaved,
+      dbSaved: false,
+      dbError: 'Server not reachable',
+    };
+  }
 }
 
 export async function deleteJobCard(id) {

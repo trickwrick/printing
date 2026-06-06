@@ -12,6 +12,11 @@ export async function saveOrUpdate(body: Record<string, unknown>) {
     body.companyName = partyName;
   }
 
+  const rawId = body._id as string | undefined;
+  if (rawId && !/^[a-f\d]{24}$/i.test(rawId)) {
+    delete body._id;
+  }
+
   let jobCard = null;
   let isUpdate = false;
   const _id = body._id as string | undefined;

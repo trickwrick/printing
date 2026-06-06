@@ -127,7 +127,7 @@ export const Setting =
     'Setting',
     new Schema(
       {
-        siteTitle: { type: String, default: 'Shree Om Printing Press' },
+        siteTitle: { type: String, default: 'Krishna Printers' },
         adminEmail: String,
         adminMobile: String,
         supportEmail: String,

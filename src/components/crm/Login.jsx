@@ -86,9 +86,9 @@ const Login = () => {
               <Printer size={24} />
             </div>
             <div>
-              <p className="text-white font-black text-xl tracking-tight leading-none">Shree Om</p>
+              <p className="text-white font-black text-xl tracking-tight leading-none">Krishna</p>
               <p className="text-blue-200 text-[11px] font-semibold uppercase tracking-[0.2em] mt-1">
-                Printing Press
+                Printers
               </p>
             </div>
           </div>
@@ -126,7 +126,7 @@ const Login = () => {
         </div>
 
         <p className="relative z-10 text-blue-200/50 text-xs">
-          &copy; {new Date().getFullYear()} Shree Om Printing Press
+          &copy; {new Date().getFullYear()} Krishna Printers
         </p>
       </div>
 
@@ -144,9 +144,9 @@ const Login = () => {
               <Printer size={22} />
             </div>
             <div>
-              <p className="text-gray-900 font-black text-lg leading-none">Shree Om</p>
+              <p className="text-gray-900 font-black text-lg leading-none">Krishna</p>
               <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">
-                Printing Press
+                Printers
               </p>
             </div>
           </div>
@@ -220,7 +220,7 @@ const Login = () => {
           </div>
 
           <p className="text-center text-gray-400 text-xs mt-6 lg:hidden">
-            &copy; {new Date().getFullYear()} Shree Om Printing Press
+            &copy; {new Date().getFullYear()} Krishna Printers
           </p>
         </div>
       </div>

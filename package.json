@@ -1,8 +1,8 @@
 {
-  "name": "shree-om-printing-press-crm",
+  "name": "krishna-printers-crm",
   "version": "1.0.0",
   "private": true,
-  "description": "Shree Om Printing Press CRM - Next.js full-stack",
+  "description": "Krishna Printers CRM - Next.js full-stack",
   "engines": {
     "node": ">=18"
   },
@@ -19,6 +19,7 @@
     "html2pdf.js": "^0.14.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.17.0",
+    "mongodb": "^7.2.0",
     "mongoose": "^9.6.3",
     "next": "15.5.19",
     "react": "19.1.0",

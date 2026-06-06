@@ -346,13 +346,13 @@ const InvoiceList = () => {
 
                   <div className="flex justify-between items-start gap-6">
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-xl font-black text-gray-900 tracking-tight">Shree Om Printing Press</h2>
+                      <h2 className="text-xl font-black text-gray-900 tracking-tight">Krishna Printers</h2>
                       <p className="text-[10px] text-gray-700 font-medium italic">Your Vision, Our Print.</p>
 
                       <div className="mt-2">
                         <h4 className="text-[11px] font-black text-gray-900 border-b-2 mb-2 pb-0.5 inline-block uppercase tracking-wider">Address :</h4>
                         <div className="text-[12px] space-y-1 font-medium text-gray-600">
-                          <p className="font-bold text-gray-800">Shree Om Printing Press</p>
+                          <p className="font-bold text-gray-800">Krishna Printers</p>
                           <p>Office: J-97, Ashok Chowk, Adarsh Nagar, Jaipur</p>
                           <p>Factory: G-139, Hirawala Ind. Area, Kanota, Jaipur</p>
                           <p>Tel: +91 94140-43763</p>
@@ -562,7 +562,7 @@ const InvoiceList = () => {
                       <p>3. Subject to Jaipur Jurisdiction Only.</p>
                     </div>
                     <div className="text-right">
-                       <p className="font-bold uppercase tracking-widest text-[#1e3a8a]">For Shree Om Printing Press</p>
+                       <p className="font-bold uppercase tracking-widest text-[#1e3a8a]">For Krishna Printers</p>
                        <p className="mt-6 print:mt-3 font-black text-gray-800">Authorised Signatory</p>
                     </div>
                   </div>

@@ -3,8 +3,8 @@ import 'react-datepicker/dist/react-datepicker.css';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Shree Om Printing Press CRM',
-  description: 'Shree Om Printing Press CRM Web Application',
+  title: 'Krishna Printers CRM',
+  description: 'Krishna Printers CRM Web Application',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

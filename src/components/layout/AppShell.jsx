@@ -140,7 +140,7 @@ export default function AppShell({ children }) {
   }, [router]);
 
   const [siteSettings, setSiteSettings] = useState({
-    siteTitle: 'Shree Om Printing Press',
+    siteTitle: 'Krishna Printers',
     logo: null,
     whiteLogo: null,
     favicon: null,
@@ -152,7 +152,7 @@ export default function AppShell({ children }) {
   }, []);
 
   useEffect(() => {
-    document.title = siteSettings.siteTitle || 'Shree Om Printing Press';
+    document.title = siteSettings.siteTitle || 'Krishna Printers';
     if (siteSettings.favicon) {
       const link = document.querySelector("link[rel~='icon']");
       if (link) link.href = siteSettings.favicon;
@@ -298,10 +298,10 @@ export default function AppShell({ children }) {
               </div>
             )}
             <span className="truncate hidden sm:block">
-              {!siteSettings.siteTitle || siteSettings.siteTitle === 'TRICKWRICK' || siteSettings.siteTitle === 'Harihar Printers' || siteSettings.siteTitle === 'Shree Om Printing Press' ? (
+              {!siteSettings.siteTitle || siteSettings.siteTitle === 'TRICKWRICK' || siteSettings.siteTitle === 'Harihar Printers' || siteSettings.siteTitle === 'Shree Om Printing Press' || siteSettings.siteTitle === 'Krishna Printers' ? (
                 <>
-                  <span className="text-[#111827] font-black">Shree Om</span>{' '}
-                  <span className="text-[#2563eb] font-black">Printing Press</span>
+                  <span className="text-[#111827] font-black">Krishna</span>{' '}
+                  <span className="text-[#2563eb] font-black">Printers</span>
                 </>
               ) : (
                 siteSettings.siteTitle

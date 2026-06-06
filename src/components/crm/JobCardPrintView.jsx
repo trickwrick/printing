@@ -75,7 +75,7 @@ export default function JobCardPrintView({ card, printId = 'job-card-print-view'
       <div className="flex justify-between items-start border-b-2 border-gray-800 pb-3 mb-4">
         <div>
           <h1 className="text-2xl font-black leading-tight">
-            Shree Om <span className="text-blue-700">Printing Press</span>
+            Krishna <span className="text-blue-700">Printers</span>
           </h1>
           <p className="text-[9px] font-semibold text-gray-700 mt-1">
             Office: J-97, Ashok Chowk, Adarsh Nagar, Jaipur-302004

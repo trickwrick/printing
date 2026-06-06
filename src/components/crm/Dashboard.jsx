@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { fetchJobCards } from '@/utils/jobCardStorage';
 import { useRouter } from 'next/navigation';
 import {
@@ -116,83 +116,100 @@ export default function Dashboard() {
     chartData: [],
   });
 
-  useEffect(() => {
-    const fetchLatestJobCards = async () => {
-      try {
-        const data = await fetchJobCards();
-        const sorted = [...data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setAllJobCards(sorted);
-        setLatestJobCards(sorted.slice(0, 5));
+  const loadDashboardData = useCallback(async () => {
+    try {
+      setLoadingJobCards(true);
+      const data = await fetchJobCards();
+      const sorted = [...data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setAllJobCards(sorted);
+      setLatestJobCards(sorted.slice(0, 5));
 
-        const now = new Date();
-          const currentYear = now.getFullYear();
-          const currentMonth = now.getMonth();
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
 
-          let curMonthSum = 0;
-          let prevMonthSum = 0;
-          let curYearSum = 0;
-          let prevYearSum = 0;
-          let monthJobs = 0;
+      let curMonthSum = 0;
+      let prevMonthSum = 0;
+      let curYearSum = 0;
+      let prevYearSum = 0;
+      let monthJobs = 0;
 
-          const monthsNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const monthlyTotals = Array(12).fill(0);
+      const monthsNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthlyTotals = Array(12).fill(0);
 
-          data.forEach((card) => {
-            const cardDate = new Date(card.jobDate || card.createdAt);
-            const amt = Number(card.totalAmount) || 0;
-            const cardYear = cardDate.getFullYear();
-            const cardMonth = cardDate.getMonth();
+      data.forEach((card) => {
+        const cardDate = new Date(card.jobDate || card.createdAt);
+        const amt = Number(card.totalAmount) || 0;
+        const cardYear = cardDate.getFullYear();
+        const cardMonth = cardDate.getMonth();
 
-            if (cardYear === currentYear) {
-              curYearSum += amt;
-              monthlyTotals[cardMonth] += amt;
-              if (cardMonth === currentMonth) monthJobs += 1;
-            }
-            if (cardYear === currentYear - 1) prevYearSum += amt;
-            if (cardYear === currentYear && cardMonth === currentMonth) curMonthSum += amt;
+        if (cardYear === currentYear) {
+          curYearSum += amt;
+          monthlyTotals[cardMonth] += amt;
+          if (cardMonth === currentMonth) monthJobs += 1;
+        }
+        if (cardYear === currentYear - 1) prevYearSum += amt;
+        if (cardYear === currentYear && cardMonth === currentMonth) curMonthSum += amt;
 
-            const isPrevMonth =
-              currentMonth === 0
-                ? cardYear === currentYear - 1 && cardMonth === 11
-                : cardYear === currentYear && cardMonth === currentMonth - 1;
-            if (isPrevMonth) prevMonthSum += amt;
-          });
+        const isPrevMonth =
+          currentMonth === 0
+            ? cardYear === currentYear - 1 && cardMonth === 11
+            : cardYear === currentYear && cardMonth === currentMonth - 1;
+        if (isPrevMonth) prevMonthSum += amt;
+      });
 
-          let mDiff = 0;
-          if (prevMonthSum > 0) mDiff = ((curMonthSum - prevMonthSum) / prevMonthSum) * 100;
-          else if (curMonthSum > 0) mDiff = 100;
+      let mDiff = 0;
+      if (prevMonthSum > 0) mDiff = ((curMonthSum - prevMonthSum) / prevMonthSum) * 100;
+      else if (curMonthSum > 0) mDiff = 100;
 
-          let yDiff = 0;
-          if (prevYearSum > 0) yDiff = ((curYearSum - prevYearSum) / prevYearSum) * 100;
-          else if (curYearSum > 0) yDiff = 100;
+      let yDiff = 0;
+      if (prevYearSum > 0) yDiff = ((curYearSum - prevYearSum) / prevYearSum) * 100;
+      else if (curYearSum > 0) yDiff = 100;
 
-          let cumulativeYearly = 0;
-          const chartData = monthsNames.map((name, idx) => {
-            cumulativeYearly += monthlyTotals[idx];
-            return {
-              name,
-              'Monthly Revenue': monthlyTotals[idx],
-              'Yearly Revenue': cumulativeYearly,
-            };
-          });
+      let cumulativeYearly = 0;
+      const chartData = monthsNames.map((name, idx) => {
+        cumulativeYearly += monthlyTotals[idx];
+        return {
+          name,
+          'Monthly Revenue': monthlyTotals[idx],
+          'Yearly Revenue': cumulativeYearly,
+        };
+      });
 
-          setStats({
-            monthlyRevenue: curMonthSum,
-            monthlyDiff: mDiff,
-            yearlyRevenue: curYearSum,
-            yearlyDiff: yDiff,
-            totalJobs: data.length,
-            monthJobs,
-            chartData,
-          });
-      } catch (err) {
-        console.error('Error fetching latest job cards:', err);
-      } finally {
-        setLoadingJobCards(false);
-      }
-    };
-    fetchLatestJobCards();
+      setStats({
+        monthlyRevenue: curMonthSum,
+        monthlyDiff: mDiff,
+        yearlyRevenue: curYearSum,
+        yearlyDiff: yDiff,
+        totalJobs: data.length,
+        monthJobs,
+        chartData,
+      });
+    } catch (err) {
+      console.error('Error fetching latest job cards:', err);
+    } finally {
+      setLoadingJobCards(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadDashboardData();
+
+    const onUpdate = () => loadDashboardData();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadDashboardData();
+    };
+
+    window.addEventListener('jobCardsUpdated', onUpdate);
+    window.addEventListener('focus', onUpdate);
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      window.removeEventListener('jobCardsUpdated', onUpdate);
+      window.removeEventListener('focus', onUpdate);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [loadDashboardData]);
 
   const greeting =
     new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 17 ? 'Good Afternoon' : 'Good Evening';

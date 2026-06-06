@@ -7,6 +7,14 @@ declare global {
 
 const MONGO_URI = process.env.MONGO_URI;
 
+function resolveMongoUri(uri: string) {
+  if (!uri) return uri;
+  if (/@[^/?]+(\/[^/?]+)/.test(uri)) return uri;
+  const queryIndex = uri.indexOf('?');
+  if (queryIndex === -1) return `${uri.replace(/\/$/, '')}/printing_crm`;
+  return `${uri.slice(0, queryIndex).replace(/\/$/, '')}/printing_crm${uri.slice(queryIndex)}`;
+}
+
 if (!global.mongooseConn) {
   global.mongooseConn = { conn: null, promise: null };
 }

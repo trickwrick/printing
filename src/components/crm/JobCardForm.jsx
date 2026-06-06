@@ -212,6 +212,7 @@ export default function JobCardForm() {
     try {
       const result = await saveJobCard(jobCard);
       window.dispatchEvent(new Event('fetchNotifications'));
+      window.dispatchEvent(new Event('jobCardsUpdated'));
       if (!result.dbSaved) {
         alert(
           `Job card saved on this device only.\nDatabase error: ${result.dbError}\n\nVercel par MONGO_URI set karo aur MongoDB Atlas mein IP whitelist (0.0.0.0/0) allow karo.`,

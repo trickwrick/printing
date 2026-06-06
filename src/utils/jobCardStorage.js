@@ -31,15 +31,20 @@ export function isLocalJobCardId(id) {
   return isLocalId(id);
 }
 
+export function isMongoId(id) {
+  return /^[a-f\d]{24}$/i.test(String(id || '').trim());
+}
+
 export async function resolveServerJobCard(card) {
   if (!card || typeof card !== 'object') return card;
 
   const normalized = normalizeCard(card);
-  if (normalized._id && !isLocalId(String(normalized._id))) {
+  if (normalized._id && isMongoId(normalized._id)) {
     return normalized;
   }
 
-  if (!normalized.jobNumber || normalized.jobNumber === 'Pending') {
+  const jobNumber = normalized.jobNumber ? String(normalized.jobNumber).trim() : '';
+  if (!jobNumber || jobNumber === 'Pending') {
     return normalized;
   }
 
@@ -49,9 +54,10 @@ export async function resolveServerJobCard(card) {
     const list = await response.json();
     if (!Array.isArray(list)) return normalized;
 
-    const match = list.find(
-      (item) => item?.jobNumber && item.jobNumber === normalized.jobNumber,
-    );
+    const match = list.find((item) => {
+      if (!item?.jobNumber) return false;
+      return String(item.jobNumber).trim() === jobNumber;
+    });
     if (match?._id) {
       return normalizeCard({ ...normalized, ...match, _id: String(match._id) });
     }
@@ -60,6 +66,23 @@ export async function resolveServerJobCard(card) {
   }
 
   return normalized;
+}
+
+export async function resolveEditCardId(cardId, card, editIdParam) {
+  if (cardId && isMongoId(cardId)) return String(cardId).trim();
+  if (editIdParam && isMongoId(editIdParam)) return String(editIdParam).trim();
+
+  const resolved = await resolveServerJobCard({
+    ...card,
+    _id: cardId || editIdParam,
+    jobNumber: card?.jobNumber,
+  });
+
+  if (resolved._id && isMongoId(resolved._id)) {
+    return String(resolved._id);
+  }
+
+  return null;
 }
 
 function normalizeCard(card) {
@@ -134,10 +157,18 @@ function mergeJobCards(serverCards, localCards) {
   );
 
   for (const card of localCards) {
-    if (!isLocalId(card?._id)) continue;
-    const keys = [card?._id, card?.jobNumber].filter(Boolean);
+    const normalized = normalizeCard(card);
+    const jobNumber = normalized.jobNumber ? String(normalized.jobNumber).trim() : '';
+
+    if (isLocalId(String(normalized._id))) {
+      if (jobNumber && jobNumber !== 'Pending' && seen.has(jobNumber)) continue;
+    } else if (jobNumber && seen.has(jobNumber)) {
+      continue;
+    }
+
+    const keys = [normalized._id, normalized.jobNumber].filter(Boolean);
     if (keys.some((key) => seen.has(key))) continue;
-    merged.push(normalizeCard(card));
+    merged.push(normalized);
     keys.forEach((key) => seen.add(key));
   }
 
@@ -187,19 +218,19 @@ export async function saveJobCard(data, options = {}) {
   const payloadData = { ...data };
   let cardId = payloadData._id ? String(payloadData._id).trim() : '';
 
-  if ((!cardId || isLocalId(cardId)) && options.editId && !isLocalId(String(options.editId))) {
+  if ((!cardId || isLocalId(cardId)) && options.editId && isMongoId(options.editId)) {
     cardId = String(options.editId).trim();
   }
 
   if (cardId && isLocalId(cardId)) {
     const resolved = await resolveServerJobCard({ ...payloadData, _id: cardId });
-    if (resolved._id && !isLocalId(String(resolved._id))) {
+    if (resolved._id && isMongoId(resolved._id)) {
       cardId = String(resolved._id);
       Object.assign(payloadData, resolved);
     }
   }
 
-  if (cardId && !isLocalId(cardId)) {
+  if (cardId && isMongoId(cardId)) {
     payloadData._id = cardId;
     const localSaved = saveLocalJobCard(payloadData);
 

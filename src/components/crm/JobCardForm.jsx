@@ -7,7 +7,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Printer, X } from 'lucide-react';
 import { consumeEditData } from '@/lib/navigation';
-import { saveJobCard, resolveServerJobCard } from '@/utils/jobCardStorage';
+import { saveJobCard, resolveServerJobCard, resolveEditCardId, isMongoId } from '@/utils/jobCardStorage';
 import { printElement } from '@/utils/printDocument';
 import JobCardPrintView from '@/components/crm/JobCardPrintView';
 
@@ -96,7 +96,7 @@ const validateForm = ({ fd, plateSize, setCover, setInner, finishingRows }) => {
   req(fd.get('parts'), 'Parts');
   req(fd.get('printingQty'), 'Print Quantity');
 
-  if (!setCover && !setInner) errors.push('Cover Pages ya Inner Pages — koi ek select karo');
+  if (!setCover && !setInner) errors.push('Select Cover Pages or Inner Pages');
 
   let tickedCount = 0;
   finishingRows.forEach((row, rowIdx) => {
@@ -107,7 +107,7 @@ const validateForm = ({ fd, plateSize, setCover, setInner, finishingRows }) => {
   });
 
   if (tickedCount === 0) {
-    errors.push('Finishing Processes — kam se kam ek process Yes karo');
+    errors.push('Finishing Processes — mark at least one process as Yes');
   }
 
   return errors;
@@ -138,14 +138,32 @@ export default function JobCardForm() {
 
       if (editIdParam && editIdParam !== 'new') {
         try {
-          const response = await fetch(`/api/jobcard/${editIdParam}`, { cache: 'no-store' });
-          if (response.ok) {
-            const data = await resolveServerJobCard(await response.json());
-            if (!cancelled) {
-              setEditData(data);
-              setLoadingEdit(false);
+          if (isMongoId(editIdParam)) {
+            const response = await fetch(`/api/jobcard/${editIdParam}`, { cache: 'no-store' });
+            if (response.ok) {
+              const data = await resolveServerJobCard(await response.json());
+              if (!cancelled) {
+                setEditData(data);
+                setLoadingEdit(false);
+              }
+              return;
             }
-            return;
+          }
+
+          const response = await fetch('/api/jobcard', { cache: 'no-store' });
+          if (response.ok) {
+            const list = await response.json();
+            const match = Array.isArray(list)
+              ? list.find((item) => String(item?._id) === editIdParam)
+              : null;
+            if (match) {
+              const data = await resolveServerJobCard(match);
+              if (!cancelled) {
+                setEditData(data);
+                setLoadingEdit(false);
+              }
+              return;
+            }
           }
         } catch {
           /* fall through */
@@ -275,14 +293,22 @@ export default function JobCardForm() {
     }
 
     const hiddenId = fd.get('_id');
-    const cardId = hiddenId || editData?._id || (isEditMode ? editIdParam : null);
+    let cardId = hiddenId || editData?._id || (isEditMode ? editIdParam : null);
 
-    if (isEditMode && (!cardId || String(cardId).startsWith('local_'))) {
-      alert('Edit mode error: job card server id missing. List se dubara edit karo.');
-      return;
+    if (isEditMode) {
+      const resolvedId = await resolveEditCardId(
+        cardId,
+        { ...jobCard, jobNumber: editData?.jobNumber || fd.get('jobNumber') },
+        editIdParam,
+      );
+      if (!resolvedId) {
+        alert('Could not find this job card on the server. Please open it again from the job card list.');
+        return;
+      }
+      jobCard._id = resolvedId;
+    } else if (cardId) {
+      jobCard._id = String(cardId).trim();
     }
-
-    if (cardId) jobCard._id = String(cardId).trim();
 
     try {
       const result = await saveJobCard(jobCard, {
@@ -291,7 +317,7 @@ export default function JobCardForm() {
       window.dispatchEvent(new Event('fetchNotifications'));
       if (!result.dbSaved) {
         alert(
-          `Job card saved on this device only.\nDatabase error: ${result.dbError}\n\nVercel par MONGO_URI set karo aur MongoDB Atlas mein IP whitelist (0.0.0.0/0) allow karo.`,
+          `Job card saved on this device only.\nDatabase error: ${result.dbError}\n\nCheck MONGO_URI on Vercel and allow MongoDB Atlas IP access (0.0.0.0/0).`,
         );
       }
       router.push('/job-card-list');
@@ -312,7 +338,11 @@ export default function JobCardForm() {
       className="mx-auto mt-8 pb-12"
     >
       {(editData?._id || (isEditMode && editIdParam)) && (
-        <input type="hidden" name="_id" value={String(editData?._id || editIdParam)} />
+        <input
+          type="hidden"
+          name="_id"
+          value={String(isMongoId(editData?._id) ? editData._id : editIdParam || editData?._id || '')}
+        />
       )}
 
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -339,7 +369,7 @@ export default function JobCardForm() {
             <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={20} />
             <div>
               <p className="text-sm font-bold text-red-700 mb-2">
-                Job card save nahi hoga — pehle ye sab complete karo:
+                Job card cannot be saved — please complete the following:
               </p>
               <ul className="text-sm text-red-600 space-y-1 list-disc list-inside">
                 {formErrors.map((err, i) => (

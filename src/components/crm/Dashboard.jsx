@@ -276,7 +276,7 @@ export default function Dashboard() {
               Your print business, fully under control
             </h2>
             <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
-              Job cards, invoices, challans, paper stock — sab ek hi dashboard se manage karo.
+              Job cards, invoices, challans, and paper stock — manage everything from one dashboard.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 shrink-0">

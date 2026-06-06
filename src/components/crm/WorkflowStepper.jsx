@@ -59,7 +59,7 @@ export default function WorkflowStepper({ jobCards = [] }) {
         <div>
           <h3 className="text-lg font-black text-gray-900">Job Workflow Progress</h3>
           <p className="text-xs text-gray-400 mt-1">
-            Step-by-step — pehle wala complete → tick ✓, phir agla step start
+            Complete each step in order — when one step is done, the next step starts.
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export default function WorkflowStepper({ jobCards = [] }) {
 
       {jobCards.length === 0 ? (
         <div className="text-center py-10 text-gray-400 text-sm italic border border-dashed border-gray-200 rounded-2xl">
-          Pehle job card banao, phir yahan step-by-step progress dikhegi
+          Create a job card first to track step-by-step progress here.
         </div>
       ) : (
         <>
@@ -217,10 +217,10 @@ export default function WorkflowStepper({ jobCards = [] }) {
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-100">
             <p className="text-xs text-gray-500 font-medium text-center sm:text-left">
               {allDone
-                ? '🎉 Saare 4 steps complete! Job ready for final closure.'
+                ? 'All 4 steps complete. Job is ready for final closure.'
                 : activeStep
-                  ? `Abhi Step ${activeStep} chal raha hai — ${WORKFLOW_STEPS[activeStep - 1].assignee} ka kaam`
-                  : 'Workflow start karo'}
+                  ? `Step ${activeStep} is in progress — assigned to ${WORKFLOW_STEPS[activeStep - 1].assignee}`
+                  : 'Start the workflow'}
             </p>
             {!allDone && (
               <button

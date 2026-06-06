@@ -27,6 +27,41 @@ function isLocalId(id) {
   return typeof id === 'string' && id.startsWith('local_');
 }
 
+export function isLocalJobCardId(id) {
+  return isLocalId(id);
+}
+
+export async function resolveServerJobCard(card) {
+  if (!card || typeof card !== 'object') return card;
+
+  const normalized = normalizeCard(card);
+  if (normalized._id && !isLocalId(String(normalized._id))) {
+    return normalized;
+  }
+
+  if (!normalized.jobNumber || normalized.jobNumber === 'Pending') {
+    return normalized;
+  }
+
+  try {
+    const response = await fetch('/api/jobcard', { cache: 'no-store' });
+    if (!response.ok) return normalized;
+    const list = await response.json();
+    if (!Array.isArray(list)) return normalized;
+
+    const match = list.find(
+      (item) => item?.jobNumber && item.jobNumber === normalized.jobNumber,
+    );
+    if (match?._id) {
+      return normalizeCard({ ...normalized, ...match, _id: String(match._id) });
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return normalized;
+}
+
 function normalizeCard(card) {
   if (!card || typeof card !== 'object') return card;
   return {
@@ -132,41 +167,78 @@ export async function fetchJobCards() {
   return local.map(normalizeCard);
 }
 
-function buildApiPayload(data, localSaved) {
+function buildCreatePayload(data) {
   const payload = { ...data };
-
-  const cardId = localSaved._id || data._id;
-  if (cardId && !isLocalId(String(cardId))) {
-    payload._id = String(cardId);
-    if (localSaved.jobNumber || data.jobNumber) {
-      payload.jobNumber = localSaved.jobNumber || data.jobNumber;
-    }
-    return payload;
-  }
-
   delete payload._id;
   delete payload.jobNumber;
   return payload;
 }
 
-export async function saveJobCard(data) {
-  const payloadData = { ...data };
-  const cardId = payloadData._id ? String(payloadData._id) : '';
+function buildUpdatePayload(data, localSaved) {
+  const payload = { ...data };
+  delete payload._id;
+  if (localSaved.jobNumber || data.jobNumber) {
+    payload.jobNumber = localSaved.jobNumber || data.jobNumber;
+  }
+  return payload;
+}
 
-  if (!cardId || isLocalId(cardId)) {
-    delete payloadData._id;
-    delete payloadData.jobNumber;
-  } else {
-    payloadData._id = cardId;
+export async function saveJobCard(data, options = {}) {
+  const payloadData = { ...data };
+  let cardId = payloadData._id ? String(payloadData._id).trim() : '';
+
+  if ((!cardId || isLocalId(cardId)) && options.editId && !isLocalId(String(options.editId))) {
+    cardId = String(options.editId).trim();
   }
 
+  if (cardId && isLocalId(cardId)) {
+    const resolved = await resolveServerJobCard({ ...payloadData, _id: cardId });
+    if (resolved._id && !isLocalId(String(resolved._id))) {
+      cardId = String(resolved._id);
+      Object.assign(payloadData, resolved);
+    }
+  }
+
+  if (cardId && !isLocalId(cardId)) {
+    payloadData._id = cardId;
+    const localSaved = saveLocalJobCard(payloadData);
+
+    try {
+      const response = await fetch(`/api/jobcard/${encodeURIComponent(cardId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildUpdatePayload(payloadData, localSaved)),
+      });
+
+      if (response.ok) {
+        const saved = upsertLocalFromServer(localSaved._id, await response.json());
+        return { saved, dbSaved: true };
+      }
+
+      const err = await response.json().catch(() => ({}));
+      return {
+        saved: localSaved,
+        dbSaved: false,
+        dbError: err?.error || 'Database update failed',
+      };
+    } catch {
+      return {
+        saved: localSaved,
+        dbSaved: false,
+        dbError: 'Server not reachable',
+      };
+    }
+  }
+
+  delete payloadData._id;
+  delete payloadData.jobNumber;
   const localSaved = saveLocalJobCard(payloadData);
 
   try {
     const response = await fetch('/api/jobcard', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildApiPayload(payloadData, localSaved)),
+      body: JSON.stringify(buildCreatePayload(payloadData)),
     });
 
     if (response.ok) {

@@ -14,21 +14,30 @@ async function generateNextJobNumber() {
   return `JOBHR-${String(nextNum).padStart(4, '0')}`;
 }
 
-export async function saveOrUpdate(body: Record<string, unknown>) {
+function normalizeObjectId(value: unknown): string | undefined {
+  if (value == null || value === '') return undefined;
+  const str = String(value).trim();
+  if (/^[a-f\d]{24}$/i.test(str)) return str;
+  return undefined;
+}
+
+export async function saveOrUpdate(body: Record<string, unknown>, forcedId?: string) {
   const { partyName } = body;
 
   if (partyName && !body.companyName) {
     body.companyName = partyName;
   }
 
-  const rawId = body._id as string | undefined;
-  if (rawId && !/^[a-f\d]{24}$/i.test(rawId)) {
-    delete body._id;
+  const rawId = forcedId ?? body._id;
+  const _id = normalizeObjectId(rawId);
+  delete body._id;
+
+  if (rawId != null && String(rawId).trim() !== '' && !_id) {
+    throw new Error('Invalid job card id format');
   }
 
   let jobCard = null;
   let isUpdate = false;
-  const _id = body._id as string | undefined;
   let previousJob = null;
 
   if (_id) {

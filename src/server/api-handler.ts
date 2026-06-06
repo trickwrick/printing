@@ -51,7 +51,8 @@ export async function withDb<T>(
     if (
       message.includes('already exists') ||
       message.includes('required') ||
-      message.includes('Failed to save')
+      message.includes('Failed to save') ||
+      message.includes('Invalid job card id')
     ) {
       return NextResponse.json({ error: message }, { status: 400 });
     }

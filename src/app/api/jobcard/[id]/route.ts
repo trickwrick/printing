@@ -12,3 +12,11 @@ export async function DELETE(request: Request, { params }: Params) {
   const { id } = await params;
   return withDb(request, () => jobcardService.remove(id));
 }
+
+export async function PUT(request: Request, { params }: Params) {
+  const { id } = await params;
+  return withDb(request, async () => {
+    const body = await request.json();
+    return jobcardService.saveOrUpdate(body, id);
+  });
+}

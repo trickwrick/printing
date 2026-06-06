@@ -7,7 +7,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Printer, X } from 'lucide-react';
 import { consumeEditData } from '@/lib/navigation';
-import { saveJobCard } from '@/utils/jobCardStorage';
+import { saveJobCard, resolveServerJobCard } from '@/utils/jobCardStorage';
 import { printElement } from '@/utils/printDocument';
 import JobCardPrintView from '@/components/crm/JobCardPrintView';
 
@@ -117,8 +117,9 @@ export default function JobCardForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editIdParam = searchParams.get('editId');
+  const isEditMode = Boolean(editIdParam && editIdParam !== 'new');
   const [editData, setEditData] = useState(null);
-  const [loadingEdit, setLoadingEdit] = useState(!!editIdParam && editIdParam !== 'new');
+  const [loadingEdit, setLoadingEdit] = useState(isEditMode);
   const formRef = React.useRef(null);
 
   useEffect(() => {
@@ -126,9 +127,10 @@ export default function JobCardForm() {
 
     async function loadEditData() {
       const fromSession = consumeEditData();
-      if (fromSession?._id) {
+      if (fromSession) {
+        const resolved = await resolveServerJobCard(fromSession);
         if (!cancelled) {
-          setEditData(fromSession);
+          setEditData(resolved);
           setLoadingEdit(false);
         }
         return;
@@ -138,7 +140,7 @@ export default function JobCardForm() {
         try {
           const response = await fetch(`/api/jobcard/${editIdParam}`, { cache: 'no-store' });
           if (response.ok) {
-            const data = await response.json();
+            const data = await resolveServerJobCard(await response.json());
             if (!cancelled) {
               setEditData(data);
               setLoadingEdit(false);
@@ -273,11 +275,19 @@ export default function JobCardForm() {
     }
 
     const hiddenId = fd.get('_id');
-    const cardId = hiddenId || editData?._id;
-    if (cardId) jobCard._id = String(cardId);
+    const cardId = hiddenId || editData?._id || (isEditMode ? editIdParam : null);
+
+    if (isEditMode && (!cardId || String(cardId).startsWith('local_'))) {
+      alert('Edit mode error: job card server id missing. List se dubara edit karo.');
+      return;
+    }
+
+    if (cardId) jobCard._id = String(cardId).trim();
 
     try {
-      const result = await saveJobCard(jobCard);
+      const result = await saveJobCard(jobCard, {
+        editId: isEditMode ? editIdParam : undefined,
+      });
       window.dispatchEvent(new Event('fetchNotifications'));
       if (!result.dbSaved) {
         alert(
@@ -292,16 +302,18 @@ export default function JobCardForm() {
 
   return (
     <>
-    {loadingEdit ? (
+    {loadingEdit || (isEditMode && !editData) ? (
       <div className="mx-auto mt-8 pb-12 text-center text-gray-500">Loading job card...</div>
     ) : (
     <form
-      key={editData?._id ? String(editData._id) : 'new-job-card'}
+      key={editData?._id ? String(editData._id) : editIdParam || 'new-job-card'}
       ref={formRef}
       onSubmit={handleSubmit}
       className="mx-auto mt-8 pb-12"
     >
-      {editData?._id && <input type="hidden" name="_id" value={editData._id} />}
+      {(editData?._id || (isEditMode && editIdParam)) && (
+        <input type="hidden" name="_id" value={String(editData?._id || editIdParam)} />
+      )}
 
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

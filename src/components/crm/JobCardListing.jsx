@@ -12,6 +12,7 @@ import { printElement } from '@/utils/printDocument';
 
 import { fetchJobCards, deleteJobCard } from '@/utils/jobCardStorage';
 import MiniWorkflowStepper from '@/components/crm/MiniWorkflowStepper';
+import DaysLeftBadge from '@/components/crm/DaysLeftBadge';
 import {
   getJobCardId,
   readWorkflowProgressMap,
@@ -458,7 +459,12 @@ export default function JobCardListing() {
                   </tr>
                   <tr className="border-b last:border-0 border-gray-100 bg-gray-50/30">
                     <td colSpan={tableColSpan} className="py-1.5 px-2">
-                      <MiniWorkflowStepper completedCount={completedSteps} />
+                      <div className="flex items-stretch gap-2">
+                        <div className="flex-1 min-w-0">
+                          <MiniWorkflowStepper completedCount={completedSteps} />
+                        </div>
+                        <DaysLeftBadge card={card} />
+                      </div>
                     </td>
                   </tr>
                   </React.Fragment>

@@ -45,12 +45,21 @@ export async function saveOrUpdate(body: Record<string, unknown>) {
   }
 
   if (_id && previousJob) {
+    const updatePayload = { ...body };
+    delete updatePayload._id;
+    delete updatePayload.createdAt;
+
     jobCard = await JobCard.findByIdAndUpdate(
       _id,
-      { ...body, updatedAt: new Date() },
+      { $set: { ...updatePayload, updatedAt: new Date() } },
       { new: true },
     );
-    if (jobCard) isUpdate = true;
+    if (!jobCard) {
+      throw new Error('Failed to update job card');
+    }
+    isUpdate = true;
+  } else if (_id && !previousJob) {
+    throw new Error('Job Card not found');
   }
 
   if (!isUpdate) {
@@ -116,11 +125,14 @@ export async function findAll() {
 }
 
 export async function findOne(id: string) {
-  const jobCard = await JobCard.findById(id);
+  const jobCard = await JobCard.findById(id).lean();
   if (!jobCard) {
     throw new Error('Job Card not found');
   }
-  return jobCard;
+  return {
+    ...jobCard,
+    _id: String(jobCard._id),
+  };
 }
 
 export async function remove(id: string) {

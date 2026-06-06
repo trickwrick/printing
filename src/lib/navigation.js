@@ -3,6 +3,9 @@
 export function navigateWithEditData(router, path, editData) {
   if (typeof window !== 'undefined' && editData) {
     sessionStorage.setItem('crmEditData', JSON.stringify(editData));
+    const editId = editData._id ? String(editData._id) : 'new';
+    router.push(`${path}?editId=${encodeURIComponent(editId)}&t=${Date.now()}`);
+    return;
   }
   router.push(path);
 }

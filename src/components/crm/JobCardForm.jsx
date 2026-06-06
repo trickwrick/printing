@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useRouter } from 'next/navigation';
@@ -114,28 +115,82 @@ const validateForm = ({ fd, plateSize, setCover, setInner, finishingRows }) => {
 
 export default function JobCardForm() {
   const router = useRouter();
-  const [editData] = useState(() => consumeEditData());
+  const searchParams = useSearchParams();
+  const editIdParam = searchParams.get('editId');
+  const [editData, setEditData] = useState(null);
+  const [loadingEdit, setLoadingEdit] = useState(!!editIdParam && editIdParam !== 'new');
   const formRef = React.useRef(null);
 
-  const [jobDate, setJobDate] = useState(editData ? new Date(editData.jobDate) : new Date());
-  const [plateType, setPlateType] = useState(
-    editData?.plateType === 'Old' || editData?.plateType === 'Old Plate' ? 'Old Plate' : 'New Plate',
-  );
-  const [plateSize, setPlateSize] = useState(editData?.plateSize || '');
-  const [printSide, setPrintSide] = useState(
-    editData?.printSheet === 'Both Side' ? 'Both Side' : 'Single Side',
-  );
-  const [setCover, setSetCover] = useState(
-    editData?.coverPaperDetails?.includes('Cover') || Number(editData?.coverPaperCount) > 0,
-  );
-  const [setInner, setSetInner] = useState(
-    editData?.innerPaperDetails?.includes('Inner') || Number(editData?.innerPaperCount) > 0,
-  );
-  const [finishingRows, setFinishingRows] = useState(() => parseFinishingRows(editData));
-  const [remarks, setRemarks] = useState(editData?.notes || '');
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadEditData() {
+      const fromSession = consumeEditData();
+      if (fromSession?._id) {
+        if (!cancelled) {
+          setEditData(fromSession);
+          setLoadingEdit(false);
+        }
+        return;
+      }
+
+      if (editIdParam && editIdParam !== 'new') {
+        try {
+          const response = await fetch(`/api/jobcard/${editIdParam}`, { cache: 'no-store' });
+          if (response.ok) {
+            const data = await response.json();
+            if (!cancelled) {
+              setEditData(data);
+              setLoadingEdit(false);
+            }
+            return;
+          }
+        } catch {
+          /* fall through */
+        }
+      }
+
+      if (!cancelled) {
+        setEditData(null);
+        setLoadingEdit(false);
+      }
+    }
+
+    loadEditData();
+    return () => {
+      cancelled = true;
+    };
+  }, [editIdParam]);
+
+  const [jobDate, setJobDate] = useState(new Date());
+  const [plateType, setPlateType] = useState('New Plate');
+  const [plateSize, setPlateSize] = useState('');
+  const [printSide, setPrintSide] = useState('Single Side');
+  const [setCover, setSetCover] = useState(false);
+  const [setInner, setSetInner] = useState(false);
+  const [finishingRows, setFinishingRows] = useState(() => defaultFinishingRows());
+  const [remarks, setRemarks] = useState('');
   const [formErrors, setFormErrors] = useState([]);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
+
+  useEffect(() => {
+    if (!editData) return;
+    setJobDate(editData.jobDate ? new Date(editData.jobDate) : new Date());
+    setPlateType(
+      editData.plateType === 'Old' || editData.plateType === 'Old Plate' ? 'Old Plate' : 'New Plate',
+    );
+    setPlateSize(editData.plateSize || '');
+    setPrintSide(editData.printSheet === 'Both Side' ? 'Both Side' : 'Single Side');
+    setSetCover(
+      editData.coverPaperDetails?.includes('Cover') || Number(editData.coverPaperCount) > 0,
+    );
+    setSetInner(
+      editData.innerPaperDetails?.includes('Inner') || Number(editData.innerPaperCount) > 0,
+    );
+    setFinishingRows(parseFinishingRows(editData));
+    setRemarks(editData.notes || '');
+  }, [editData]);
 
   const buildPreviewData = () => {
     if (!formRef.current) return null;
@@ -217,7 +272,9 @@ export default function JobCardForm() {
       jobCard.completionDays = Number(completionDays);
     }
 
-    if (editData?._id) jobCard._id = editData._id;
+    const hiddenId = fd.get('_id');
+    const cardId = hiddenId || editData?._id;
+    if (cardId) jobCard._id = String(cardId);
 
     try {
       const result = await saveJobCard(jobCard);
@@ -235,7 +292,15 @@ export default function JobCardForm() {
 
   return (
     <>
-    <form ref={formRef} onSubmit={handleSubmit} className="mx-auto mt-8 pb-12">
+    {loadingEdit ? (
+      <div className="mx-auto mt-8 pb-12 text-center text-gray-500">Loading job card...</div>
+    ) : (
+    <form
+      key={editData?._id ? String(editData._id) : 'new-job-card'}
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="mx-auto mt-8 pb-12"
+    >
       {editData?._id && <input type="hidden" name="_id" value={editData._id} />}
 
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -486,6 +551,7 @@ export default function JobCardForm() {
         </button>
       </div>
     </form>
+    )}
 
     {showPrintPreview && previewData && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto print-modal-overlay">

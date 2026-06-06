@@ -135,9 +135,12 @@ export async function fetchJobCards() {
 function buildApiPayload(data, localSaved) {
   const payload = { ...data };
 
-  if (localSaved._id && !isLocalId(localSaved._id)) {
-    payload._id = String(localSaved._id);
-    if (localSaved.jobNumber) payload.jobNumber = localSaved.jobNumber;
+  const cardId = localSaved._id || data._id;
+  if (cardId && !isLocalId(String(cardId))) {
+    payload._id = String(cardId);
+    if (localSaved.jobNumber || data.jobNumber) {
+      payload.jobNumber = localSaved.jobNumber || data.jobNumber;
+    }
     return payload;
   }
 
@@ -148,9 +151,13 @@ function buildApiPayload(data, localSaved) {
 
 export async function saveJobCard(data) {
   const payloadData = { ...data };
-  if (!payloadData._id || isLocalId(payloadData._id)) {
+  const cardId = payloadData._id ? String(payloadData._id) : '';
+
+  if (!cardId || isLocalId(cardId)) {
     delete payloadData._id;
     delete payloadData.jobNumber;
+  } else {
+    payloadData._id = cardId;
   }
 
   const localSaved = saveLocalJobCard(payloadData);

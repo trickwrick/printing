@@ -34,12 +34,19 @@ export async function connectDB() {
     throw new Error('MONGO_URI not configured');
   }
 
-  if (mongoose.connection.readyState === 1) {
+  const { readyState } = mongoose.connection;
+
+  if (readyState === mongoose.ConnectionStates.connected) {
     global.mongooseConn.conn = mongoose;
     return mongoose;
   }
 
-  if (global.mongooseConn.conn && mongoose.connection.readyState !== 1) {
+  if (global.mongooseConn.promise && readyState === mongoose.ConnectionStates.connecting) {
+    global.mongooseConn.conn = await global.mongooseConn.promise;
+    return global.mongooseConn.conn;
+  }
+
+  if (global.mongooseConn.conn) {
     global.mongooseConn.conn = null;
     global.mongooseConn.promise = null;
   }
@@ -70,5 +77,7 @@ export function isDbConfigured() {
 }
 
 export function getDbStatus() {
-  return mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
+  return mongoose.connection.readyState === mongoose.ConnectionStates.connected
+    ? 'Connected'
+    : 'Disconnected';
 }

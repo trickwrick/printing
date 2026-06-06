@@ -15,18 +15,37 @@ function setLocalJobCards(cards) {
   window.dispatchEvent(new Event('jobCardsUpdated'));
 }
 
+function syncLocalJobCards(cards) {
+  localStorage.setItem(LOCAL_JOB_CARDS_KEY, JSON.stringify(cards));
+}
+
 export function generateLocalId() {
   return `local_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function generateJobNumber(cards = getLocalJobCards()) {
-  let nextNum = 1;
-  for (const card of cards) {
-    if (!card?.jobNumber) continue;
-    const num = parseInt(String(card.jobNumber).replace(/[^0-9]/g, ''), 10);
-    if (!Number.isNaN(num) && num >= nextNum) nextNum = num + 1;
-  }
-  return `JOBHR-${String(nextNum).padStart(4, '0')}`;
+function isLocalId(id) {
+  return typeof id === 'string' && id.startsWith('local_');
+}
+
+function normalizeCard(card) {
+  if (!card || typeof card !== 'object') return card;
+  return {
+    ...card,
+    _id: card._id != null ? String(card._id) : card._id,
+  };
+}
+
+function upsertLocalFromServer(localId, serverCard) {
+  const saved = normalizeCard(serverCard);
+  const cards = getLocalJobCards().filter(
+    (c) =>
+      c._id !== localId &&
+      c._id !== saved._id &&
+      (!saved.jobNumber || c.jobNumber !== saved.jobNumber),
+  );
+  cards.unshift(saved);
+  setLocalJobCards(cards);
+  return saved;
 }
 
 export function saveLocalJobCard(data) {
@@ -34,39 +53,31 @@ export function saveLocalJobCard(data) {
   const now = new Date().toISOString();
   let saved;
 
-  if (data._id) {
+  if (data._id && !isLocalId(data._id)) {
+    const idx = cards.findIndex((c) => String(c._id) === String(data._id));
+    if (idx >= 0) {
+      saved = { ...cards[idx], ...data, updatedAt: now };
+      cards[idx] = saved;
+    } else {
+      saved = { ...data, _id: String(data._id), createdAt: data.createdAt || now, updatedAt: now };
+      cards.unshift(saved);
+    }
+  } else if (data._id && isLocalId(data._id)) {
     const idx = cards.findIndex((c) => c._id === data._id);
-    if (idx >= 0) {
-      saved = { ...cards[idx], ...data, updatedAt: now };
-      cards[idx] = saved;
-    } else {
-      saved = {
-        ...data,
-        jobNumber: data.jobNumber || generateJobNumber(cards),
-        createdAt: now,
-        updatedAt: now,
-      };
-      cards.unshift(saved);
-    }
-  } else if (data.jobNumber) {
-    const idx = cards.findIndex((c) => c.jobNumber === data.jobNumber);
-    if (idx >= 0) {
-      saved = { ...cards[idx], ...data, updatedAt: now };
-      cards[idx] = saved;
-    } else {
-      saved = {
-        ...data,
-        _id: generateLocalId(),
-        createdAt: now,
-        updatedAt: now,
-      };
-      cards.unshift(saved);
-    }
+    saved = {
+      ...data,
+      _id: data._id,
+      jobNumber: data.jobNumber || 'Pending',
+      createdAt: data.createdAt || now,
+      updatedAt: now,
+    };
+    if (idx >= 0) cards[idx] = saved;
+    else cards.unshift(saved);
   } else {
     saved = {
       ...data,
       _id: generateLocalId(),
-      jobNumber: generateJobNumber(cards),
+      jobNumber: 'Pending',
       createdAt: now,
       updatedAt: now,
     };
@@ -78,23 +89,20 @@ export function saveLocalJobCard(data) {
 }
 
 export function deleteLocalJobCard(id) {
-  setLocalJobCards(getLocalJobCards().filter((c) => c._id !== id));
-}
-
-function isLocalId(id) {
-  return typeof id === 'string' && id.startsWith('local_');
+  setLocalJobCards(getLocalJobCards().filter((c) => String(c._id) !== String(id)));
 }
 
 function mergeJobCards(serverCards, localCards) {
-  const merged = Array.isArray(serverCards) ? [...serverCards] : [];
+  const merged = (Array.isArray(serverCards) ? serverCards : []).map(normalizeCard);
   const seen = new Set(
     merged.flatMap((card) => [card?._id, card?.jobNumber].filter(Boolean)),
   );
 
   for (const card of localCards) {
+    if (!isLocalId(card?._id)) continue;
     const keys = [card?._id, card?.jobNumber].filter(Boolean);
     if (keys.some((key) => seen.has(key))) continue;
-    merged.push(card);
+    merged.push(normalizeCard(card));
     keys.forEach((key) => seen.add(key));
   }
 
@@ -110,38 +118,52 @@ export async function fetchJobCards() {
     const response = await fetch('/api/jobcard', { cache: 'no-store' });
     if (response.ok) {
       const data = await response.json();
-      if (Array.isArray(data)) return mergeJobCards(data, local);
+      if (Array.isArray(data)) {
+        const pendingLocal = local.filter((c) => isLocalId(String(c._id)));
+        const merged = mergeJobCards(data, pendingLocal);
+        syncLocalJobCards(merged);
+        return merged;
+      }
     }
   } catch {
     /* server not available — use local */
   }
 
-  return local;
+  return local.map(normalizeCard);
 }
 
 function buildApiPayload(data, localSaved) {
-  const payload = { ...data, jobNumber: localSaved.jobNumber };
+  const payload = { ...data };
+
   if (localSaved._id && !isLocalId(localSaved._id)) {
-    payload._id = localSaved._id;
-  } else {
-    delete payload._id;
+    payload._id = String(localSaved._id);
+    if (localSaved.jobNumber) payload.jobNumber = localSaved.jobNumber;
+    return payload;
   }
+
+  delete payload._id;
+  delete payload.jobNumber;
   return payload;
 }
 
 export async function saveJobCard(data) {
-  const localSaved = saveLocalJobCard(data);
+  const payloadData = { ...data };
+  if (!payloadData._id || isLocalId(payloadData._id)) {
+    delete payloadData._id;
+    delete payloadData.jobNumber;
+  }
+
+  const localSaved = saveLocalJobCard(payloadData);
 
   try {
     const response = await fetch('/api/jobcard', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildApiPayload(data, localSaved)),
+      body: JSON.stringify(buildApiPayload(payloadData, localSaved)),
     });
 
     if (response.ok) {
-      const saved = await response.json();
-      saveLocalJobCard(saved);
+      const saved = upsertLocalFromServer(localSaved._id, await response.json());
       return { saved, dbSaved: true };
     }
 
@@ -162,6 +184,8 @@ export async function saveJobCard(data) {
 
 export async function deleteJobCard(id) {
   deleteLocalJobCard(id);
+
+  if (!id || isLocalId(String(id))) return;
 
   try {
     await fetch(`/api/jobcard/${id}`, { method: 'DELETE' });

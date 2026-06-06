@@ -193,7 +193,7 @@ export default function JobCardForm() {
       partyName: fd.get('partyName'),
       companyName: fd.get('partyName'),
       jobName: fd.get('jobName'),
-      jobNumber: editData?.jobNumber || fd.get('jobNumber') || undefined,
+      jobNumber: editData?.jobNumber || undefined,
       jobDate: jobDate.toISOString(),
       plateType: plateType === 'Old Plate' ? 'Old' : 'New',
       plateSize: plateSize || undefined,
@@ -291,8 +291,8 @@ export default function JobCardForm() {
                 type="text"
                 name="jobNumber"
                 defaultValue={editData?.jobNumber || ''}
-                readOnly={!!editData?.jobNumber}
-                className={`${fieldClass} ${editData?.jobNumber ? 'bg-gray-50 font-semibold text-red-600' : ''}`}
+                readOnly
+                className={`${fieldClass} bg-gray-50 font-semibold text-red-600`}
                 placeholder="Auto on save"
               />
             </div>

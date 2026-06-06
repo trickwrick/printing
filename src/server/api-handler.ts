@@ -34,6 +34,14 @@ export async function withDb<T>(handler: () => Promise<T>, status = 200) {
     if (message.includes('not found') || message.includes('Not Found')) {
       return NextResponse.json({ error: message }, { status: 404 });
     }
+    if (
+      message.includes('Could not connect') ||
+      message.includes('whitelist') ||
+      message.includes('MongoServerSelectionError') ||
+      message.includes('MONGO_URI not configured')
+    ) {
+      return NextResponse.json({ error: message }, { status: 503 });
+    }
     console.error('API error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }

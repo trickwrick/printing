@@ -4,9 +4,18 @@ import {
   syncStockFromJobChange,
 } from '@/server/utils/jobcard-stock.helpers';
 
+async function generateNextJobNumber() {
+  const lastJob = await JobCard.findOne().sort({ createdAt: -1 }).select('jobNumber');
+  let nextNum = 1;
+  if (lastJob?.jobNumber) {
+    const lastNum = parseInt(String(lastJob.jobNumber).replace(/[^0-9]/g, ''), 10);
+    if (!Number.isNaN(lastNum)) nextNum = lastNum + 1;
+  }
+  return `JOBHR-${String(nextNum).padStart(4, '0')}`;
+}
+
 export async function saveOrUpdate(body: Record<string, unknown>) {
   const { partyName } = body;
-  const jobNumber = body.jobNumber as string | undefined;
 
   if (partyName && !body.companyName) {
     body.companyName = partyName;
@@ -35,7 +44,7 @@ export async function saveOrUpdate(body: Record<string, unknown>) {
     );
   }
 
-  if (_id) {
+  if (_id && previousJob) {
     jobCard = await JobCard.findByIdAndUpdate(
       _id,
       { ...body, updatedAt: new Date() },
@@ -44,33 +53,10 @@ export async function saveOrUpdate(body: Record<string, unknown>) {
     if (jobCard) isUpdate = true;
   }
 
-  if (!isUpdate && jobNumber) {
-    const existingJob = await JobCard.findOne({ jobNumber });
-    if (existingJob) {
-      isUpdate = true;
-      previousJob = previousJob || existingJob;
-      jobCard = await JobCard.findOneAndUpdate(
-        { jobNumber },
-        { ...body, updatedAt: new Date() },
-        { new: true },
-      );
-    } else {
-      jobCard = await JobCard.create(body);
-    }
-  } else if (!isUpdate) {
-    const lastJob = await JobCard.findOne()
-      .sort({ createdAt: -1 })
-      .select('jobNumber');
-    let nextNum = 1;
-    if (lastJob?.jobNumber) {
-      const lastNum = parseInt(
-        String(lastJob.jobNumber).replace(/[^0-9]/g, ''),
-        10,
-      );
-      if (!isNaN(lastNum)) nextNum = lastNum + 1;
-    }
-    const generatedJobNumber = `JOBHR-${String(nextNum).padStart(4, '0')}`;
-    body.jobNumber = generatedJobNumber;
+  if (!isUpdate) {
+    delete body._id;
+    delete body.jobNumber;
+    body.jobNumber = await generateNextJobNumber();
     jobCard = await JobCard.create(body);
   }
 

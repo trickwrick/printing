@@ -22,15 +22,26 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    const defaultAdmin = {
+      email: 'krishna@gmail.com',
+      password: 'krishna@123',
+    };
+
     const admin = localStorage.getItem('adminAuth');
     if (!admin) {
-      localStorage.setItem(
-        'adminAuth',
-        JSON.stringify({
-          email: 'admin@gmail.com',
-          password: '123456',
-        }),
-      );
+      localStorage.setItem('adminAuth', JSON.stringify(defaultAdmin));
+    } else {
+      try {
+        const storedAdmin = JSON.parse(admin);
+        const isLegacyAccount =
+          storedAdmin.email === 'admin@gmail.com' ||
+          storedAdmin.password === '123456';
+        if (isLegacyAccount) {
+          localStorage.setItem('adminAuth', JSON.stringify(defaultAdmin));
+        }
+      } catch {
+        localStorage.setItem('adminAuth', JSON.stringify(defaultAdmin));
+      }
     }
 
     if (localStorage.getItem('isLoggedIn') === 'true') {
@@ -177,7 +188,7 @@ const Login = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="admin@gmail.com"
+                    placeholder="krishna@gmail.com"
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-3.5 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white transition-all"
                   />
                 </div>
